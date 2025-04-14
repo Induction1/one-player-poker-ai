@@ -1,42 +1,45 @@
 import torch
 from env.poker_env import OnePlayerPokerEnv
 from agent.model import PolicyNetwork
-from agent.runner import encode_observation, select_action_topk
+from agent.runner import encode_observation
 from env.card_utils import hand_to_str
 
+# --- Load trained model ---
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-# Load trained policy
 policy_net = PolicyNetwork().to(device)
-policy_net.load_state_dict(torch.load("policy.pth", map_location=device))
+policy_net.load_state_dict(torch.load("checkpoints-m1/policy.pth", map_location=device))
 policy_net.eval()
 
-# Create environment
+# --- Run simulation ---
 env = OnePlayerPokerEnv()
-obs_dict = env.reset()
+obs = env.reset()
 done = False
 
-print("Starting game (BOT):")
-env.render()
+print("\n🎮 Starting policy rollout...\n")
 
 while not done:
-    obs_tensor = encode_observation(obs_dict).to(device)
-
+    obs_tensor = encode_observation(obs).unsqueeze(0).to(device)
     with torch.no_grad():
-        logits = policy_net(obs_tensor)
+        logits = policy_net(obs_tensor).squeeze()
 
-    action_mask, _ = select_action_topk(logits, k=3)
-    action_subset = [i for i in range(52) if action_mask[i] == 1.0 and i in env.deck]
+        valid_mask = torch.zeros(52, device=device)
+        valid_mask[env.deck] = 1
 
-    print(f"\nBot picked subset: {hand_to_str(action_subset)}")
+        masked_logits = logits * valid_mask - 1e9 * (1 - valid_mask)
+        probs = torch.softmax(masked_logits, dim=-1)
 
-    obs_dict, reward, done, _ = env.step(action_subset)
-    env.render()
+        action = torch.multinomial(probs, num_samples=5).tolist()
 
-print("\nGame Over!")
-if reward == 1:
-    print("✅ Bot won!")
-elif reward == 0:
-    print("⚖️ Draw.")
-else:
-    print("❌ Bot lost.")
+        if isinstance(action, int):
+            action = [action]
+
+    print(f"Step {env.round + 1}:")
+    print(f"  Action (target IDs): {action}")
+    print(f"  Player hand: {hand_to_str(env.player_hand)}")
+
+    obs, reward, done, _ = env.step(action)
+
+    if done:
+        print(f"\n🏁 Final Player hand: {hand_to_str(env.player_hand)}")
+        print(f"💥 Final reward: {reward}")
+        print(f"🎴 Opponent's best hand: {env.best_opponent_hand()}")
