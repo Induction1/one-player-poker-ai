@@ -1,8 +1,8 @@
 import itertools
 import random
 from itertools import combinations
-from env.card_utils import hand_to_str, id_to_numeric, card_id, id_to_card
-from env.poker_data import *
+from .card_utils import hand_to_str, id_to_numeric, id_to_card
+from .poker_data import *
 
 # Cactus Kev encoding setup
 _SUITS = [1 << (i + 12) for i in range(4)]
