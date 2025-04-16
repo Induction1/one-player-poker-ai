@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useEffect } from 'react';
 
-const BACKEND_URL = 'http://localhost:8000';
+const BACKEND_URL = 'https://five-eight-poker.onrender.com';
 
 const ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
 const suits = ['♠', '♥', '♦', '♣'];
