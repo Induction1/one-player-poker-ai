@@ -9,6 +9,29 @@ _SUITS = [1 << (i + 12) for i in range(4)]
 _RANKS = [(1 << (i + 16)) | (i << 8) for i in range(13)]
 _PRIMES = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41]
 _DECK = [_RANKS[r] | _SUITS[s] | _PRIMES[r] for r, s in itertools.product(range(13), range(4))]
+_HAND_NAMES = [
+    "High Card", "One Pair", "Two Pair", "Three of a Kind",
+    "Straight", "Flush", "Full House", "Four of a Kind", "Straight Flush"
+]
+
+def best_5_cards(self, card_ids):
+    """Return the best 5-card combination from a list of card IDs."""
+    best_score = float("inf")
+    best_hand = []
+    for combo in combinations(card_ids, 5):
+        score = self.score_hand(self.ids_to_rank_suit(combo))
+        if score < best_score:
+            best_score = score
+            best_hand = list(combo)
+    return best_hand
+
+def hand_rank_name(self, card_ids):
+    """Return the hand name for a 5-card hand."""
+    if len(card_ids) != 5:
+        return "Incomplete Hand"
+    rank, _ = self.evaluate_hand(card_ids)
+    return HAND_NAMES[rank]
+
 
 SUITS = 'cdhs'
 RANKS = '23456789TJQKA'
@@ -196,6 +219,24 @@ class OnePlayerPokerEnv:
         """Return string version of best 5-card opponent hand."""
         _, hand = self.best_opponent_hand_rank()
         return " ".join(f"{a}{b}" for a, b in map(id_to_card, hand))
+
+    def best_5_cards(self, card_ids):
+        """Return the best 5-card combination from a list of card IDs."""
+        best_score = float("inf")
+        best_hand = []
+        for combo in combinations(card_ids, 5):
+            score = self.score_hand(self.ids_to_rank_suit(combo))
+            if score < best_score:
+                best_score = score
+                best_hand = list(combo)
+        return best_hand
+
+    def hand_rank_name(self, card_ids):
+        """Return the hand name for a 5-card hand."""
+        if len(card_ids) != 5:
+            return "Incomplete Hand"
+        rank, _ = self.evaluate_hand(card_ids)
+        return _HAND_NAMES[rank]
 
     def render(self):
         print(f"Round: {self.round}")

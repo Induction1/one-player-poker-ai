@@ -27,10 +27,28 @@ class StepRequest(BaseModel):
 @app.post("/step")
 def step(req: StepRequest):
     obs, reward, done, _ = env.step(req.selected_cards)
+
+    if done:
+        player_best = env.best_5_cards(env.player_hand)
+        player_rank = env.hand_rank_name(player_best)
+
+        best_score, best_opponent_hand = env.best_opponent_hand_rank()
+        opponent_best = best_opponent_hand
+        opponent_rank = env.hand_rank_name(best_opponent_hand)
+    else:
+        player_best = []
+        player_rank = ""
+        opponent_best = []
+        opponent_rank = ""
+
     return {
         "observation": {
             "player_hand": env.player_hand,
-            "opponent_cards": env.opponent_cards
+            "opponent_cards": env.opponent_cards,
+            "player_best_hand": player_best,
+            "opponent_best_hand": opponent_best,
+            "player_hand_rank": player_rank,
+            "opponent_hand_rank": opponent_rank
         },
         "reward": reward,
         "done": done
